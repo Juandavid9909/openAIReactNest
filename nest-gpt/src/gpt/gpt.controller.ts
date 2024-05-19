@@ -1,13 +1,13 @@
-import { Body, Controller, FileTypeValidator, Get, HttpStatus, MaxFileSizeValidator, Param, ParseFilePipe, Post, Res, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, FileTypeValidator, Get, HttpStatus, MaxFileSizeValidator, Param, ParseFilePipe, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { diskStorage } from "multer";
-import { FileInterceptor } from '@nestjs/platform-express';
-import type { Response } from 'express';
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 
-import { GptService } from './gpt.service';
-import { AudioToTextDto, ImageGenerationDto, OrthographyDto, ProsConsDiscusserDto, TextToAudioDto, TranslateDto } from './dtos';
-import { ImageVariationDto } from './dtos/image-variation.dto';
+import { GptService } from "./gpt.service";
+import { AudioToTextDto, ImageGenerationDto, OrthographyDto, ProsConsDiscusserDto, TextToAudioDto, TranslateDto } from "./dtos";
+import { ImageVariationDto } from "./dtos/image-variation.dto";
 
-@Controller('gpt')
+@Controller("gpt")
 export class GptController {
   constructor(private readonly gptService: GptService) {}
 
@@ -127,5 +127,36 @@ export class GptController {
     @Body() imageVariationDto: ImageVariationDto
   ) {
     return await this.gptService.generateImageVariation(imageVariationDto);
+  }
+
+  @Post("extract-text-from-image")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: "./generated/uploads",
+        filename: (req, file, callback) => {
+          const fileExtension = file.originalname.split(".").pop();
+          const fileName = `${new Date().getTime()}.${fileExtension}`;
+          return callback(null, fileName);
+        },
+      }),
+    }),
+  )
+  async extractTextFromImage(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 1000 * 1024 * 5,
+            message: "File is bigger than 5 mb ",
+          }),
+          new FileTypeValidator({ fileType: "image/*" }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body("prompt") prompt: string,
+  ) {
+    return this.gptService.imageToText(file, prompt);
   }
 }
