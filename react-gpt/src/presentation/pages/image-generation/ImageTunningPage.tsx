@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { GptMessage, MyMessage, TypingLoader, TextMessageBox, GptMessageSelectableImage } from "../../components";
 import { imageGenerationUseCase } from "../../../core/use-cases";
-import { imageVariationUseCase } from '../../../core/use-cases/image-variation.use-case';
+import { imageVariationUseCase } from '../../../core/use-cases/image-generation/image-variation.use-case';
 
 interface Message {
   text: string;
